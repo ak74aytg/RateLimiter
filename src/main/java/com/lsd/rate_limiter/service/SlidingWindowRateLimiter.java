@@ -1,6 +1,7 @@
 package com.lsd.rate_limiter.service;
 
 import com.lsd.rate_limiter.models.Requests;
+import com.lsd.rate_limiter.models.UserRequestState;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayDeque;
@@ -17,20 +18,25 @@ public class SlidingWindowRateLimiter {
 
 
     public Boolean RateLimiter(String user){
-        HashMap<String, Deque<Long>> userList = model.getUsers();
+        HashMap<String, UserRequestState> userList = model.getUsers();
         long milliseconds = System.currentTimeMillis();
 
         if (!userList.containsKey(user)){
-            userList.put(user, new ArrayDeque<>());
+            UserRequestState userRequestState = new UserRequestState();
+            userRequestState.getTimestamp().add(milliseconds);
+            userRequestState.setLastSeenAt(milliseconds);
+
+            userList.put(user, userRequestState);
         }
-        userList.get(user).add(milliseconds);
+        userList.get(user).getTimestamp().add(milliseconds);
+        userList.get(user).setLastSeenAt(milliseconds);
 
         long lastMinute = milliseconds - 60 * 1000;
-        while (userList.get(user).peek() < lastMinute ) {
-            userList.get(user).pop();
+        while (userList.get(user).getTimestamp().peek() < lastMinute ) {
+            userList.get(user).getTimestamp().pop();
         }
 
-        long requestCount = userList.get(user).size();
+        long requestCount = userList.get(user).getTimestamp().size();
         return requestCount <= 100;
     }
 }

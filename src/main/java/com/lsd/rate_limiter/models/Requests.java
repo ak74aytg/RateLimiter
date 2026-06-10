@@ -12,9 +12,11 @@ import java.util.HashMap;
 @Getter
 @Component
 public class Requests {
-    HashMap<String, Deque<Long>> users;
+    HashMap<String, UserRequestState> users;
 
     Requests(){
         users = new HashMap<>();
     }
 }
+
+
