@@ -13,10 +13,8 @@ import java.util.HashMap;
 @Component
 public class Requests {
     HashMap<String, Deque<Long>> users;
-    HashMap<String, Long> blockUsers;
 
     Requests(){
         users = new HashMap<>();
-        blockUsers = new HashMap<>();
     }
 }

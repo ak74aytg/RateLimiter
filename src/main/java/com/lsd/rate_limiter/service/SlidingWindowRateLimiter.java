@@ -18,15 +18,7 @@ public class SlidingWindowRateLimiter {
 
     public Boolean RateLimiter(String user){
         HashMap<String, Deque<Long>> userList = model.getUsers();
-        HashMap<String, Long> blockList = model.getBlockUsers();
         long milliseconds = System.currentTimeMillis();
-        if (blockList.containsKey(user)){
-            if (blockList.get(user) + 60 * 1000 < milliseconds) {
-                blockList.remove(user);
-            }else{
-                return false;
-            }
-        }
 
         if (!userList.containsKey(user)){
             userList.put(user, new ArrayDeque<>());
@@ -39,10 +31,6 @@ public class SlidingWindowRateLimiter {
         }
 
         long requestCount = userList.get(user).size();
-        if (requestCount > 100){
-            blockList.putIfAbsent(user, milliseconds);
-            return false;
-        }
-        return true;
+        return requestCount <= 100;
     }
 }
