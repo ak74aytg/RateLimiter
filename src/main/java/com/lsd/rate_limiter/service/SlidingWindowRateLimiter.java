@@ -1,11 +1,10 @@
 package com.lsd.rate_limiter.service;
 
 import com.lsd.rate_limiter.models.Requests;
+import com.lsd.rate_limiter.models.UserRequestState;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
+import java.util.*;
 
 @Service
 public class SlidingWindowRateLimiter {
@@ -17,32 +16,28 @@ public class SlidingWindowRateLimiter {
 
 
     public Boolean RateLimiter(String user){
-        HashMap<String, Deque<Long>> userList = model.getUsers();
-        HashMap<String, Long> blockList = model.getBlockUsers();
+        Map<String, UserRequestState> userList = model.getUsers();
         long milliseconds = System.currentTimeMillis();
-        if (blockList.containsKey(user)){
-            if (blockList.get(user) + 60 * 1000 < milliseconds) {
-                blockList.remove(user);
-            }else{
-                return false;
-            }
-        }
 
-        if (!userList.containsKey(user)){
-            userList.put(user, new ArrayDeque<>());
-        }
-        userList.get(user).add(milliseconds);
+        UserRequestState mapUser = userList.computeIfAbsent(user, k -> new UserRequestState());
+        Queue<Long> timeStampQueue = mapUser.getTimestamp();
 
         long lastMinute = milliseconds - 60 * 1000;
-        while (userList.get(user).peek() < lastMinute ) {
-            userList.get(user).pop();
+        while (!timeStampQueue.isEmpty() && timeStampQueue.peek() < lastMinute ) {
+            timeStampQueue.poll();
         }
 
-        long requestCount = userList.get(user).size();
-        if (requestCount > 100){
-            blockList.putIfAbsent(user, milliseconds);
-            return false;
+        long requestCount = timeStampQueue.size();
+        if (requestCount > 100) return false;
+
+
+        mapUser.setLastSeenAt(milliseconds);
+
+        synchronized (timeStampQueue) {
+            timeStampQueue.add(milliseconds);
+            requestCount = timeStampQueue.size();
         }
-        return true;
+
+        return requestCount <= 100;
     }
 }

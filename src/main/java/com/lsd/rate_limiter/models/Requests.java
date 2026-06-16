@@ -4,19 +4,20 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
-import java.util.Deque;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 
 @Setter
 @Getter
 @Component
 public class Requests {
-    HashMap<String, Deque<Long>> users;
-    HashMap<String, Long> blockUsers;
+    Map<String, UserRequestState> users;
 
     Requests(){
-        users = new HashMap<>();
-        blockUsers = new HashMap<>();
+        users = new ConcurrentHashMap<>();
     }
 }
+
+
