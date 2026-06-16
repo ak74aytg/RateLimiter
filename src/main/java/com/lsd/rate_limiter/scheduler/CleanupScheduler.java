@@ -18,15 +18,10 @@ public class CleanupScheduler {
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     public void runPeriodicTask() {
-        long milliseconds = System.currentTimeMillis();
-        Iterator<Map.Entry<String, UserRequestState>> iterator = model.getUsers().entrySet().iterator();
+        long fiveMinutesAgo = System.currentTimeMillis() - (5 * 60 * 1000);
 
-        while (iterator.hasNext()) {
-            Map.Entry<String, UserRequestState> entry = iterator.next();
-
-            if (entry.getValue().getLastSeenAt() == milliseconds - 5 * 60 * 1000) {
-                iterator.remove();
-            }
-        }
+        model.getUsers().entrySet().removeIf(entry ->
+                entry.getValue().getLastSeenAt() < fiveMinutesAgo
+        );
     }
 }

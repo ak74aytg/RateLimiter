@@ -4,12 +4,13 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Setter
 @Getter
 public class UserRequestState {
-    private Deque<Long> timestamp;
+    private Queue<Long> timestamp;
     private Long lastSeenAt;
 
     public UserRequestState(){

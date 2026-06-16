@@ -4,9 +4,7 @@ import com.lsd.rate_limiter.models.Requests;
 import com.lsd.rate_limiter.models.UserRequestState;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
+import java.util.*;
 
 @Service
 public class SlidingWindowRateLimiter {
@@ -18,25 +16,28 @@ public class SlidingWindowRateLimiter {
 
 
     public Boolean RateLimiter(String user){
-        HashMap<String, UserRequestState> userList = model.getUsers();
+        Map<String, UserRequestState> userList = model.getUsers();
         long milliseconds = System.currentTimeMillis();
 
-        if (!userList.containsKey(user)){
-            UserRequestState userRequestState = new UserRequestState();
-            userRequestState.getTimestamp().add(milliseconds);
-            userRequestState.setLastSeenAt(milliseconds);
-
-            userList.put(user, userRequestState);
-        }
-        userList.get(user).getTimestamp().add(milliseconds);
-        userList.get(user).setLastSeenAt(milliseconds);
+        UserRequestState mapUser = userList.computeIfAbsent(user, k -> new UserRequestState());
+        Queue<Long> timeStampQueue = mapUser.getTimestamp();
 
         long lastMinute = milliseconds - 60 * 1000;
-        while (userList.get(user).getTimestamp().peek() < lastMinute ) {
-            userList.get(user).getTimestamp().pop();
+        while (!timeStampQueue.isEmpty() && timeStampQueue.peek() < lastMinute ) {
+            timeStampQueue.poll();
         }
 
-        long requestCount = userList.get(user).getTimestamp().size();
+        long requestCount = timeStampQueue.size();
+        if (requestCount > 100) return false;
+
+
+        mapUser.setLastSeenAt(milliseconds);
+
+        synchronized (timeStampQueue) {
+            timeStampQueue.add(milliseconds);
+            requestCount = timeStampQueue.size();
+        }
+
         return requestCount <= 100;
     }
 }
