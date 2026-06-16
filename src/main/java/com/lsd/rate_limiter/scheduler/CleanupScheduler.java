@@ -1,12 +1,9 @@
 package com.lsd.rate_limiter.scheduler;
 
 import com.lsd.rate_limiter.models.Requests;
-import com.lsd.rate_limiter.models.UserRequestState;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.Iterator;
-import java.util.Map;
 
 @Component
 public class CleanupScheduler {
