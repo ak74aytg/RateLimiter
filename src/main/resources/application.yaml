@@ -1,0 +1,12 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /rate-limiter/v1
+
+spring:
+  application:
+    name:RateLimiter
+  data:
+    redis:
+      host: localhost
+      port: 6379
