@@ -2,7 +2,7 @@ package com.lsd.rate_limiter.controller;
 
 import com.lsd.rate_limiter.dto.CustomRequest;
 import com.lsd.rate_limiter.dto.CustomResponse;
-import com.lsd.rate_limiter.service.SlidingWindowRateLimiter;
+import com.lsd.rate_limiter.service.RateLimiterService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,16 +10,16 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 public class RateLimiterController {
-    private final SlidingWindowRateLimiter slidingWindowRateLimiter;
+    private final RateLimiterService rateLimiterService;
 
-    RateLimiterController(SlidingWindowRateLimiter slidingWindowRateLimiter){
-        this.slidingWindowRateLimiter = slidingWindowRateLimiter;
+    RateLimiterController(RateLimiterService rateLimiterService){
+        this.rateLimiterService = rateLimiterService;
     }
 
 
     @PostMapping("/allow")
     public ResponseEntity<CustomResponse> allow(@RequestBody CustomRequest request) {
-        Boolean allowed = slidingWindowRateLimiter.RateLimiter(request.getUserId());
+        boolean allowed = rateLimiterService.check(request.getUserId(), request.getPolicy(), request.getPlan());
         CustomResponse response = new CustomResponse();
         response.setAllowed(allowed);
         if (allowed) return new ResponseEntity<>(response, HttpStatus.OK);

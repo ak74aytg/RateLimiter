@@ -1,4 +1,5 @@
 package com.lsd.rate_limiter.service;
+import com.lsd.rate_limiter.strategy.SlidingWindowStrategy;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,9 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @SpringBootTest
-public class SlidingWindowRateLimiterTest {
+public class SlidingWindowStrategyTest {
     @Autowired
-    private SlidingWindowRateLimiter rateLimiter;
+    private SlidingWindowStrategy rateLimiter;
 
     @Test
     void contextLoads() {
@@ -27,7 +28,7 @@ public class SlidingWindowRateLimiterTest {
         String user = "user-" + UUID.randomUUID();
 
         for (int i = 0; i < 99; i++) {
-            assertTrue(rateLimiter.RateLimiter(user));
+            assertTrue(rateLimiter.RateLimiter(user, "Sliding Window"));
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -35,7 +36,7 @@ public class SlidingWindowRateLimiterTest {
 
         Callable<Boolean> task = () -> {
             start.await();
-            return rateLimiter.RateLimiter(user);
+            return rateLimiter.RateLimiter(user, "Sliding Window");
         };
 
         Future<Boolean> first = executor.submit(task);
@@ -66,7 +67,7 @@ public class SlidingWindowRateLimiterTest {
             String user = "user-" + UUID.randomUUID();
 
             for (int i = 0; i < existingRequests; i++) {
-                assertTrue(rateLimiter.RateLimiter(user));
+                assertTrue(rateLimiter.RateLimiter(user, "Sliding Window"));
             }
 
             ExecutorService executor = Executors.newFixedThreadPool(concurrentRequests);
@@ -76,7 +77,7 @@ public class SlidingWindowRateLimiterTest {
             try {
                 Callable<Boolean> task = () -> {
                     start.await();
-                    return rateLimiter.RateLimiter(user);
+                    return rateLimiter.RateLimiter(user, "Sliding Window");
                 };
 
                 for (int i = 0; i < concurrentRequests; i++) {
