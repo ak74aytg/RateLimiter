@@ -1,6 +1,9 @@
 package com.lsd.rate_limiter.strategy;
 
+import com.lsd.rate_limiter.configuration.RateLimitPolicy;
+import com.lsd.rate_limiter.factory.RateLimitPolicyProvider;
 import com.lsd.rate_limiter.factory.StrategyTypes;
+import com.lsd.rate_limiter.factory.UserPlan;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -11,13 +14,13 @@ import java.util.UUID;
 @Service
 public class SlidingWindowStrategy implements RateLimitStrategy {
     private final RedisTemplate<String, String> redisTemplate;
-    private final int EXPIRY_DURATION = 1;
-    private final int REQUEST_COUNT = 100;
+    private final RateLimitPolicyProvider policyProvider;
     private final DefaultRedisScript<Long> addScript;
 
 
-    public SlidingWindowStrategy(RedisTemplate<String, String> redisTemplate) {
+    public SlidingWindowStrategy(RedisTemplate<String, String> redisTemplate, RateLimitPolicyProvider policyProvider) {
         this.redisTemplate = redisTemplate;
+        this.policyProvider = policyProvider;
         this.addScript = new DefaultRedisScript<>();
         addScript.setScriptText("""
             redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
@@ -39,19 +42,24 @@ public class SlidingWindowStrategy implements RateLimitStrategy {
     }
 
     @Override
-    public boolean allow(String key) {
+    public boolean allow(String key, UserPlan plan) {
+        RateLimitPolicy policy = policyProvider.getPolicy(plan);
+        int ttl = policy.getTTL();
+        int requestCount = policy.getREQUEST_COUNT();
+        int expiryDuration = policy.getEXPIRY_DURATION();
+
         Long currTime = System.currentTimeMillis();
         key = "rate_limit-sw:"+key;
         String member = UUID.randomUUID().toString();
-        long oneMinuteBefore = currTime - 60 * 1000;
+        long startTime = currTime - ttl;
         Long result = redisTemplate.execute(
                 addScript,
                 List.of(key),
-                String.valueOf(oneMinuteBefore),
-                String.valueOf(REQUEST_COUNT),
+                String.valueOf(startTime),
+                String.valueOf(requestCount),
                 String.valueOf(currTime),
                 member,
-                String.valueOf(EXPIRY_DURATION)
+                String.valueOf(expiryDuration)
         );
         return result == 1;
     }

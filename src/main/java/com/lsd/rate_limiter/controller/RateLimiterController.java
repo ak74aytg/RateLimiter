@@ -19,7 +19,7 @@ public class RateLimiterController {
 
     @PostMapping("/allow")
     public ResponseEntity<CustomResponse> allow(@RequestBody CustomRequest request) {
-        boolean allowed = rateLimiterService.check(request.getUserId(), request.getPolicy());
+        boolean allowed = rateLimiterService.check(request.getUserId(), request.getPolicy(), request.getPlan());
         CustomResponse response = new CustomResponse();
         response.setAllowed(allowed);
         if (allowed) return new ResponseEntity<>(response, HttpStatus.OK);
